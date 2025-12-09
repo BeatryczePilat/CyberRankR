@@ -1,16 +1,26 @@
 Package: CyberRankR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: CyberRankR: Pakiet R do wyznaczania priorytetów w obszarze cyberbezpieczeństwa na podstawie danych o cyberatakach z zastosowaniem wielokryterialnej analizy decyzyjnej.
 Version: 0.1.0
-Authors@R: c(
-    person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
-    )
-  )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Author: Beatrycze Piłat
+Maintainer: Beatrycze Piłat <b.pilat@student.uj.edu.pl>
+Description: CyberRankR to pakiet R służący do wyznaczania priorytetów w obszarze cyberbezpieczeństwa na podstawie danych o cyberatakach. Wykorzystuje metody wielokryterialnej analizy decyzyjnej, aby wspierać eksperckie i evidence-based podejmowanie decyzji.
+License: MIT + GPL-3
 Encoding: UTF-8
 LazyData: true
+Imports:
+    dplyr,
+    tidyr,
+    readr,
+    stringr,
+    lubridate,
+    ggplot2,
+    ggrepel,
+    lpSolve,
+    BWM,
+    Rglpk
+RoxygenNote: 7.3.3
+URL: https://github.com/BeatryczePilat/CyberRankR.git
+BugReports: x
+Depends: 
+    R (>= 3.5)
