@@ -2,10 +2,13 @@
 % Please edit documentation in R/cyberrank_main.R
 \name{cyber_rank_all}
 \alias{cyber_rank_all}
-\title{Porównanie trzech metod}
+\title{Porównanie wyników trzech metod MCDA}
 \usage{
 cyber_rank_all()
 }
+\value{
+lista z wynikami trzech metod oraz wydrukowana tabela porównawcza
+}
 \description{
-Porównanie trzech metod
+Porównanie wyników trzech metod MCDA
 }

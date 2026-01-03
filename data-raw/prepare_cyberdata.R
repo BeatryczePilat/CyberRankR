@@ -3,10 +3,10 @@
 library(readr)
 library(dplyr)
 
-# WCZYTUJEMY CAŁY PLIK – bez ograniczenia 10 000
+#CAŁY PLIK
 cyber_raw <- read_csv("inst/ext-data/cybersecurity_attacks.csv")
 
-message("Wczytano ", nrow(cyber_raw), " rekordów – pełny zbiór!")
+message("Wczytano ", nrow(cyber_raw), " rekordów")
 
 cyber_attacks_10k <- cyber_raw %>%
   mutate(
@@ -44,7 +44,7 @@ cyber_attacks_10k <- cyber_raw %>%
 cat("\nTypy ataków w pełnym zbiorze:\n")
 print(table(cyber_attacks_10k$`Attack Type`))
 
-# Zapisujemy jako dane pakietu
+# Zapis jako dane pakietu
 usethis::use_data(cyber_attacks_10k, overwrite = TRUE)
 
-message("\nGotowe! Dane zapisane. Teraz masz ", nlevels(cyber_attacks_10k$`Attack Type`), " różnych typów ataków.")
+message("\nDane zapisane. Jest ", nlevels(cyber_attacks_10k$`Attack Type`), " różnych typów ataków.")

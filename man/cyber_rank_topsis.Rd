@@ -2,10 +2,13 @@
 % Please edit documentation in R/cyberrank_classic.R
 \name{cyber_rank_topsis}
 \alias{cyber_rank_topsis}
-\title{Klasyczny ranking BWM + TOPSIS (własna impl.)}
+\title{Ranking BWM + TOPSIS (klasyczny)}
 \usage{
 cyber_rank_topsis()
 }
+\value{
+data.frame z rankingiem typów ataków według metody TOPSIS
+}
 \description{
-Klasyczny ranking BWM + TOPSIS (własna impl.)
+Ranking BWM + TOPSIS (klasyczny)
 }

@@ -6,6 +6,12 @@
 \usage{
 prepare_cyber_criteria(min_attacks = 20)
 }
+\arguments{
+\item{min_attacks}{minimalna liczba incydentów wymagana do uwzględnienia typu ataku (domyślnie 20)}
+}
+\value{
+data.frame z zagregowanymi kryteriami dla każdego typu ataku
+}
 \description{
 Przygotowanie macierzy kryteriów dla wszystkich metod
 }

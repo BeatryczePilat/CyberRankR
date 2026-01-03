@@ -2,10 +2,10 @@
 % Please edit documentation in R/cyberrank_main.R
 \name{run_cyberrank}
 \alias{run_cyberrank}
-\title{Główna funkcja}
+\title{Główna funkcja pakietu}
 \usage{
 run_cyberrank()
 }
 \description{
-Główna funkcja
+Główna funkcja pakietu
 }

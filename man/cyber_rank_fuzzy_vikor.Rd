@@ -2,13 +2,16 @@
 % Please edit documentation in R/mcdm_fuzzy_vikor.R
 \name{cyber_rank_fuzzy_vikor}
 \alias{cyber_rank_fuzzy_vikor}
-\title{Fuzzy VIKOR (własna impl. z defuzz)}
+\title{Fuzzy VIKOR}
 \usage{
 cyber_rank_fuzzy_vikor(v = 0.5)
 }
 \arguments{
-\item{v}{parametr strategii (0.5 = równowaga)}
+\item{v}{współczynnik strategii (0 = maksymin, 1 = maksymalna grupa użyteczności, domyślnie 0.5)}
+}
+\value{
+data.frame z rankingiem typów ataków (im niższy Q, tym wyższy priorytet)
 }
 \description{
-Fuzzy VIKOR (własna impl. z defuzz)
+Fuzzy VIKOR
 }

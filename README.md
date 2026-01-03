@@ -1,7 +1,7 @@
 # CyberRankR
 
-**Ranking zagrożeń cybernetycznych przy użyciu metod MCDA**  
-`TOPSIS` • `Fuzzy TOPSIS` • `Fuzzy VIKOR` • wagi `BWM`
+**CyberRankR: Pakiet R do wyznaczania priorytetów w obszarze cyberbezpieczeństwa na podstawie danych o cyberatakach z zastosowaniem wielokryterialnej analizy decyzyjnej.**  
+`TOPSIS` • `Fuzzy TOPSIS` • `Fuzzy VIKOR` • ręczne wagi `BWM`
 
 Pakiet R stworzony w 2025 roku do priorytetyzacji typów cyberataków na podstawie rzeczywistych danych (~40 000 incydentów).
 

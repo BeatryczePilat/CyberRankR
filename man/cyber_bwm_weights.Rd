@@ -2,10 +2,10 @@
 % Please edit documentation in R/mcdm_bwm.R
 \name{cyber_bwm_weights}
 \alias{cyber_bwm_weights}
-\title{Wagi BWM – ręcznie ustawione (najbezpieczniejsza wersja)}
+\title{Wagi BWM – ręcznie ustawione na razie bo nie wychodzi mi inaczej}
 \usage{
 cyber_bwm_weights()
 }
 \description{
-Wagi BWM – ręcznie ustawione (najbezpieczniejsza wersja)
+Wagi BWM – ręcznie ustawione na razie bo nie wychodzi mi inaczej
 }

@@ -1,4 +1,4 @@
-# data-raw/cyber_attacks_10k.R
+# data-raw/cyber_attacks_10k.R mialo byc 10k ale wyniki byly bez sensu wiec wczytana jest cala baza ale zostawiam na razie plik moze sie przyda
 library(readr)
 library(dplyr)
 library(lubridate)

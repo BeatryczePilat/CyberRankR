@@ -2,10 +2,14 @@
 % Please edit documentation in R/mcdm_fuzzy_topsis.R
 \name{cyber_rank_fuzzy_topsis}
 \alias{cyber_rank_fuzzy_topsis}
-\title{Fuzzy TOPSIS (własna impl. z defuzz dla prostoty)}
+\title{Ranking BWM + Fuzzy TOPSIS}
 \usage{
 cyber_rank_fuzzy_topsis()
 }
+\value{
+data.frame z rankingiem typów ataków
+}
 \description{
-Fuzzy TOPSIS (własna impl. z defuzz dla prostoty)
+Metoda stosuje rozmycie trójkątne ±20% wokół wartości ostrych,
+a następnie defuzzyfikację (centrum ciężkości) i klasyczny TOPSIS.
 }
