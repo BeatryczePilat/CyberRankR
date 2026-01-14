@@ -15,6 +15,7 @@ Imports:
     stringr,
     lubridate,
     ggplot2,
+    scales,
     ggrepel,
     lpSolve,
     BWM,
