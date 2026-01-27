@@ -1,43 +1,53 @@
 ---
+title: "CyberRankR"
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
 # CyberRankR
 
-Pakiet CyberRankR to kompleksowe narzędzie do Wielokryterialnej Analizy Decyzyjnej (MCDA) w środowisku rozmytym. Umożliwia pełną ścieżkę analityczną: od surowych ankiet, przez wyznaczanie wag metodą BWM (Best-Worst Method), aż po rankingi metodami TOPSIS, VIKOR i WASPAS.
+Pakiet **CyberRankR** to kompleksowe narzędzie do wielokryterialnej analizy decyzyjnej (MCDA)
+w środowisku rozmytym. Umożliwia pełną ścieżkę analityczną: od surowych danych,
+przez wyznaczanie wag metodą **BWM (Best–Worst Method)** lub **entropii Shannona**,
+aż po rankingi metodami **TOPSIS, VIKOR, WASPAS** oraz meta-ranking konsensusowy.
+
+---
 
 ## Instalacja
 
-Możesz zainstalować wersję deweloperską z serwisu GitHub (po opublikowaniu):
-R
-# install.packages("devtools")
+Wersja deweloperska z GitHuba:
+
+```r
+install.packages("devtools")
 devtools::install_github("BeatryczePilat/CyberRankR")
+```
 
-## Podstawowy przykład użycia pakietu CyberRankR
-Oto podstawowy przykład użycia pakietu z wykorzystaniem wbudowanych danych.
+---
 
-# 1. Załaduj pakiet
+## Podstawowy przykład użycia
+
+### 1. Załaduj pakiet i dane
+
+```{r}
 library(CyberRankR)
+data(cyber_attacks_processed)
+```
 
-# 2. Wczytaj wbudowane dane
-data("cyber_attacks_processed")
+---
 
-# 3. Przygotuj rozmytą macierz decyzyjną
-# (automatyczne skalowanie do 1–9 i rozmycie trójkątne)
+### 2. Przygotuj rozmytą macierz decyzyjną
+
+```{r}
 macierz <- przygotuj_dane_mcda(
-  dane               = cyber_attacks_processed,
-  skladnia           = "
+  dane = cyber_attacks_processed,
+  skladnia = "
     severity     =~ severity;
     malware      =~ malware;
     anomaly      =~ anomaly;
@@ -49,44 +59,58 @@ macierz <- przygotuj_dane_mcda(
   ",
   kolumna_alternatyw = "Attack Type"
 )
+```
 
-# 4. Oblicz ranking metodą Fuzzy TOPSIS
-# (wagi domyślnie z entropii Shannona)
-wynik <- rozmyty_topsis(
-  macierz_decyzyjna = macierz,
-  typy_kryteriow    = CRITERIA_DIRECTION
-)
+---
 
-# 5. Wyświetl wyniki rankingu
-print(wynik$wyniki)
+### 3. Ranking Fuzzy TOPSIS (wagi z entropii Shannona)
 
-# 6. Wyświetl mapę decyzyjną TOPSIS
-plot(wynik)
+```{r}
+wynik <- cyber()
+print(wynik$meta)
 
-# ────────────────────────────────────────────────────────────────
-# 7. Bonus: wersja z wagami BWM (częściej stabilniejsza)
-# ────────────────────────────────────────────────────────────────
+```
 
-# Przykładowe preferencje BWM (anomaly najlepsze, security_det najgorsze)
-bwm_najlepsze <- c(3,4,1,5,6,9,8,2)
-bwm_najgorsze <- c(6,5,8,4,3,1,2,7)
+---
+
+### 4. Bonus: Fuzzy TOPSIS z wagami BWM
+
+```{r}
+# anomaly najlepsze, security_det najgorsze
+bwm_najlepsze <- c(3, 4, 1, 5, 6, 9, 8, 2)
+bwm_najgorsze <- c(6, 5, 8, 4, 3, 1, 2, 7)
 
 wynik_bwm <- rozmyty_topsis(
   macierz_decyzyjna = macierz,
-  typy_kryteriow    = CRITERIA_DIRECTION,
-  bwm_najlepsze     = bwm_najlepsze,
-  bwm_najgorsze     = bwm_najgorsze
+  typy_kryteriow = CRITERIA_DIRECTION,
+  bwm_najlepsze = bwm_najlepsze,
+  bwm_najgorsze = bwm_najgorsze
 )
 
 print(wynik_bwm$wyniki)
 plot(wynik_bwm)
-## 8. Szybkie użycie – funkcja cyber()
+```
 
-Po zainstalowaniu pakietu możesz uzyskać kompletny meta-ranking (VIKOR + TOPSIS + WASPAS + konsensus) **jednym poleceniem**, bez ręcznego przygotowywania macierzy i wag.
+---
 
-```{r cyber-demo, eval=FALSE}
+## Szybkie użycie – funkcja `cyber()`
+
+Jednym poleceniem możesz wykonać pełną analizę (VIKOR + TOPSIS + WASPAS + konsensus):
+
+```{r, eval=FALSE}
 # Domyślna wersja – wagi BWM (zalecana)
 cyber()
 
 # Wersja alternatywna – wagi z entropii Shannona
 cyber("entropia")
+```
+
+---
+
+## Dokumentacja
+
+Pełny tutorial dostępny jest w vignette:
+
+```r
+browseVignettes("CyberRankR")
+```

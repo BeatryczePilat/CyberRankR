@@ -1,78 +1,133 @@
-
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+CyberRankR
+================
 
 # CyberRankR
 
-Pakiet CyberRankR to kompleksowe narzędzie do Wielokryterialnej Analizy
-Decyzyjnej (MCDA) w środowisku rozmytym. Umożliwia pełną ścieżkę
-analityczną: od surowych ankiet, przez wyznaczanie wag metodą BWM
-(Best-Worst Method), aż po rankingi metodami TOPSIS, VIKOR i WASPAS.
+Pakiet **CyberRankR** to kompleksowe narzędzie do wielokryterialnej
+analizy decyzyjnej (MCDA) w środowisku rozmytym. Umożliwia pełną ścieżkę
+analityczną: od surowych danych, przez wyznaczanie wag metodą **BWM
+(Best–Worst Method)** lub **entropii Shannona**, aż po rankingi metodami
+**TOPSIS, VIKOR, WASPAS** oraz meta-ranking konsensusowy.
+
+------------------------------------------------------------------------
 
 ## Instalacja
 
-Możesz zainstalować wersję deweloperską z serwisu GitHub (po
-opublikowaniu): R \# install.packages(“devtools”)
-devtools::install_github(“BeatryczePilat/CyberRankR”)
+Wersja deweloperska z GitHuba:
 
-## Podstawowy przykład użycia pakietu CyberRankR
+``` r
+install.packages("devtools")
+devtools::install_github("BeatryczePilat/CyberRankR")
+```
 
-Oto podstawowy przykład użycia pakietu z wykorzystaniem wbudowanych
-danych.
+------------------------------------------------------------------------
 
-# 1. Załaduj pakiet
+## Podstawowy przykład użycia
 
+### 1. Załaduj pakiet i dane
+
+``` r
 library(CyberRankR)
+data(cyber_attacks_processed)
+```
 
-# 2. Wczytaj wbudowane dane
+------------------------------------------------------------------------
 
-data(“cyber_attacks_processed”)
+### 2. Przygotuj rozmytą macierz decyzyjną
 
-# 3. Przygotuj rozmytą macierz decyzyjną
+``` r
+macierz <- przygotuj_dane_mcda(
+  dane = cyber_attacks_processed,
+  skladnia = "
+    severity     =~ severity;
+    malware      =~ malware;
+    anomaly      =~ anomaly;
+    packet_load  =~ packet_load;
+    penetration  =~ penetration;
+    security_det =~ security_det;
+    asset_crit   =~ asset_crit;
+    geo_risk     =~ geo_risk
+  ",
+  kolumna_alternatyw = "Attack Type"
+)
+```
 
-# (automatyczne skalowanie do 1–9 i rozmycie trójkątne)
+------------------------------------------------------------------------
 
-macierz \<- przygotuj_dane_mcda( dane = cyber_attacks_processed,
-skladnia = ” severity =~ severity; malware =~ malware; anomaly =~
-anomaly; packet_load =~ packet_load; penetration =~ penetration;
-security_det =~ security_det; asset_crit =~ asset_crit; geo_risk =~
-geo_risk “, kolumna_alternatyw =”Attack Type” )
+### 3. Ranking Fuzzy TOPSIS (wagi z entropii Shannona)
 
-# 4. Oblicz ranking metodą Fuzzy TOPSIS
+``` r
+wynik <- cyber()
+```
 
-# (wagi domyślnie z entropii Shannona)
+    ## 
+    ## ┌───────────────────────────────────────────────┐
+    ## │               META-RANKING CYBER                 │
+    ## └───────────────────────────────────────────────┘
+    ## 
+    ##  Alternatywa R_VIKOR R_TOPSIS R_WASPAS Meta_Suma Meta_Dominacja Meta_Agregacja
+    ##         DDoS       3        3        1         3              3              3
+    ##    Intrusion       1        2        2         1              1              1
+    ##      Malware       2        1        3         2              2              2
+    ## 
+    ## Korelacje Spearmana:
+    ##                R_VIKOR R_TOPSIS R_WASPAS Meta_Suma Meta_Dominacja
+    ## R_VIKOR            1.0      0.5     -0.5       1.0            1.0
+    ## R_TOPSIS           0.5      1.0     -1.0       0.5            0.5
+    ## R_WASPAS          -0.5     -1.0      1.0      -0.5           -0.5
+    ## Meta_Suma          1.0      0.5     -0.5       1.0            1.0
+    ## Meta_Dominacja     1.0      0.5     -0.5       1.0            1.0
+    ## Meta_Agregacja     1.0      0.5     -0.5       1.0            1.0
+    ##                Meta_Agregacja
+    ## R_VIKOR                   1.0
+    ## R_TOPSIS                  0.5
+    ## R_WASPAS                 -0.5
+    ## Meta_Suma                 1.0
+    ## Meta_Dominacja            1.0
+    ## Meta_Agregacja            1.0
 
-wynik \<- rozmyty_topsis( macierz_decyzyjna = macierz, typy_kryteriow =
-CRITERIA_DIRECTION )
+``` r
+print(wynik$meta)
+```
 
-# 5. Wyświetl wyniki rankingu
+    ## NULL
 
-print(wynik\$wyniki)
+------------------------------------------------------------------------
 
-# 6. Wyświetl mapę decyzyjną TOPSIS
+### 4. Bonus: Fuzzy TOPSIS z wagami BWM
 
-plot(wynik)
+``` r
+# anomaly najlepsze, security_det najgorsze
+bwm_najlepsze <- c(3, 4, 1, 5, 6, 9, 8, 2)
+bwm_najgorsze <- c(6, 5, 8, 4, 3, 1, 2, 7)
 
-# ────────────────────────────────────────────────────────────────
+wynik_bwm <- rozmyty_topsis(
+  macierz_decyzyjna = macierz,
+  typy_kryteriow = CRITERIA_DIRECTION,
+  bwm_najlepsze = bwm_najlepsze,
+  bwm_najgorsze = bwm_najgorsze
+)
 
-# 7. Bonus: wersja z wagami BWM (częściej stabilniejsza)
+print(wynik_bwm$wyniki)
+```
 
-# ────────────────────────────────────────────────────────────────
+    ##   Alternatywa     D_plus    D_minus     Wynik Ranking
+    ## 1           1 0.25982678 0.25982678 0.5032334       3
+    ## 2           2 0.05579664 0.05579664 0.5046550       2
+    ## 3           3 0.16547960 0.16547960 0.5109540       1
 
-# Przykładowe preferencje BWM (anomaly najlepsze, security_det najgorsze)
+``` r
+plot(wynik_bwm)
+```
 
-bwm_najlepsze \<- c(3,4,1,5,6,9,8,2) bwm_najgorsze \<-
-c(6,5,8,4,3,1,2,7)
+![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-wynik_bwm \<- rozmyty_topsis( macierz_decyzyjna = macierz,
-typy_kryteriow = CRITERIA_DIRECTION, bwm_najlepsze = bwm_najlepsze,
-bwm_najgorsze = bwm_najgorsze )
+------------------------------------------------------------------------
 
-print(wynik_bwm\$wyniki) plot(wynik_bwm) \## 8. Szybkie użycie – funkcja
-cyber()
+## Szybkie użycie – funkcja `cyber()`
 
-Po zainstalowaniu pakietu możesz uzyskać kompletny meta-ranking (VIKOR +
-TOPSIS + WASPAS + konsensus) **jednym poleceniem**, bez ręcznego
-przygotowywania macierzy i wag.
+Jednym poleceniem możesz wykonać pełną analizę (VIKOR + TOPSIS +
+WASPAS + konsensus):
 
 ``` r
 # Domyślna wersja – wagi BWM (zalecana)
@@ -80,4 +135,14 @@ cyber()
 
 # Wersja alternatywna – wagi z entropii Shannona
 cyber("entropia")
+```
+
+------------------------------------------------------------------------
+
+## Dokumentacja
+
+Pełny tutorial dostępny jest w vignette:
+
+``` r
+browseVignettes("CyberRankR")
 ```
