@@ -1,27 +1,83 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # CyberRankR
 
-**CyberRankR: Pakiet R do wyznaczania priorytetów w obszarze cyberbezpieczeństwa na podstawie danych o cyberatakach z zastosowaniem wielokryterialnej analizy decyzyjnej.**  
-`TOPSIS` • `Fuzzy TOPSIS` • `Fuzzy VIKOR` • ręczne wagi `BWM`
+Pakiet CyberRankR to kompleksowe narzędzie do Wielokryterialnej Analizy
+Decyzyjnej (MCDA) w środowisku rozmytym. Umożliwia pełną ścieżkę
+analityczną: od surowych ankiet, przez wyznaczanie wag metodą BWM
+(Best-Worst Method), aż po rankingi metodami TOPSIS, VIKOR i WASPAS.
 
-Pakiet R stworzony w 2025 roku do priorytetyzacji typów cyberataków na podstawie rzeczywistych danych (~40 000 incydentów).
+## Instalacja
 
-### Wynik końcowy (wszystkie trzy metody są w 100% zgodne)
+Możesz zainstalować wersję deweloperską z serwisu GitHub (po
+opublikowaniu): R \# install.packages(“devtools”)
+devtools::install_github(“BeatryczePilat/CyberRankR”)
 
-| Rank | Typ ataku       | Liczba incydentów | Closeness |
-|------|------------------|-------------------|-----------|
-| 1    | Malware          | 13 307            | 39.8%     |
-| 2    | DDoS             | 13 428            | 39.1%     |
-| 3    | Intrusion        | 13 265            | 38.4%     |
-| 4    | Ransomware       | 4 821             | 8.7%      |
-| 5    | Phishing         | 3 910             | 6.2%      |
+## Podstawowy przykład użycia pakietu CyberRankR
 
-Malware, DDoS i Intrusion są 5–25 razy groźniejsze od pozostałych zagrożeń.
+Oto podstawowy przykład użycia pakietu z wykorzystaniem wbudowanych
+danych.
 
-### Instalacja
+# 1. Załaduj pakiet
 
-```r
-# Z GitHuba (najnowsza wersja)
-remotes::install_github("TwojLogin/CyberRankR")
+library(CyberRankR)
 
-# Lub lokalnie
-devtools::install("ścieżka/do/pakietu")
+# 2. Wczytaj wbudowane dane
+
+data(“cyber_attacks_processed”)
+
+# 3. Przygotuj rozmytą macierz decyzyjną
+
+# (automatyczne skalowanie do 1–9 i rozmycie trójkątne)
+
+macierz \<- przygotuj_dane_mcda( dane = cyber_attacks_processed,
+skladnia = ” severity =~ severity; malware =~ malware; anomaly =~
+anomaly; packet_load =~ packet_load; penetration =~ penetration;
+security_det =~ security_det; asset_crit =~ asset_crit; geo_risk =~
+geo_risk “, kolumna_alternatyw =”Attack Type” )
+
+# 4. Oblicz ranking metodą Fuzzy TOPSIS
+
+# (wagi domyślnie z entropii Shannona)
+
+wynik \<- rozmyty_topsis( macierz_decyzyjna = macierz, typy_kryteriow =
+CRITERIA_DIRECTION )
+
+# 5. Wyświetl wyniki rankingu
+
+print(wynik\$wyniki)
+
+# 6. Wyświetl mapę decyzyjną TOPSIS
+
+plot(wynik)
+
+# ────────────────────────────────────────────────────────────────
+
+# 7. Bonus: wersja z wagami BWM (częściej stabilniejsza)
+
+# ────────────────────────────────────────────────────────────────
+
+# Przykładowe preferencje BWM (anomaly najlepsze, security_det najgorsze)
+
+bwm_najlepsze \<- c(3,4,1,5,6,9,8,2) bwm_najgorsze \<-
+c(6,5,8,4,3,1,2,7)
+
+wynik_bwm \<- rozmyty_topsis( macierz_decyzyjna = macierz,
+typy_kryteriow = CRITERIA_DIRECTION, bwm_najlepsze = bwm_najlepsze,
+bwm_najgorsze = bwm_najgorsze )
+
+print(wynik_bwm\$wyniki) plot(wynik_bwm) \## 8. Szybkie użycie – funkcja
+cyber()
+
+Po zainstalowaniu pakietu możesz uzyskać kompletny meta-ranking (VIKOR +
+TOPSIS + WASPAS + konsensus) **jednym poleceniem**, bez ręcznego
+przygotowywania macierzy i wag.
+
+``` r
+# Domyślna wersja – wagi BWM (zalecana)
+cyber()
+
+# Wersja alternatywna – wagi z entropii Shannona
+cyber("entropia")
+```

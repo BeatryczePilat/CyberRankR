@@ -1,0 +1,131 @@
+---
+title: "Pełny proces analizy wielokryterialnej w pakiecie CyberRankR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Pełny proces analizy: Od danych do rankingu}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE
+)
+library(CyberRankR)
+library(knitr)
+library(patchwork)
+```
+
+## 1. Wczytanie danych
+
+Korzystamy z wbudowanego w pakiet zbioru danych `cyber_attacks_processed`.
+
+```{r}
+data("cyber_attacks_processed", package = "CyberRankR")
+head(cyber_attacks_processed, 8)
+```
+
+## 2. Definicja modelu (Składnia)
+
+```{r}
+skladnia_modelu <- "
+  severity     =~ severity;
+  malware      =~ malware;
+  anomaly      =~ anomaly;
+  packet_load  =~ packet_load;
+  penetration  =~ penetration;
+  security_det =~ security_det;
+  asset_crit   =~ asset_crit;
+  geo_risk     =~ geo_risk
+"
+```
+
+## 3. Przetwarzanie i rozmywanie danych
+
+```{r}
+macierz_rozmyta <- przygotuj_dane_mcda(
+  dane               = cyber_attacks_processed,
+  skladnia           = skladnia_modelu,
+  kolumna_alternatyw = "Attack Type"
+)
+
+print(macierz_rozmyta[1:min(5, nrow(macierz_rozmyta)), 1:min(6, ncol(macierz_rozmyta))])
+
+```
+
+## 4. Typy kryteriów
+
+```{r}
+typy <- rep("max", ncol(macierz_rozmyta))
+
+```
+
+## 5. Analiza decyzyjna (VIKOR i TOPSIS)
+
+```{r}
+bwm_best  <- c(1, 5, 6, 4, 3, 7, 2, 8)  # Najlepszy = 1
+bwm_worst <- c(8, 6, 5, 7, 4, 3, 2, 1)  # Najgorszy = 1
+
+wynik_vikor <- rozmyty_vikor(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow    = typy,
+  bwm_najlepsze     = bwm_best,
+  bwm_najgorsze     = bwm_worst
+)
+
+wynik_topsis <- rozmyty_topsis(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow    = typy,
+  bwm_najlepsze     = bwm_best,
+  bwm_najgorsze     = bwm_worst
+)
+
+if (!is.null(wynik_vikor$wyniki)) 
+  kable(wynik_vikor$wyniki, caption = "Wyniki rozmytego VIKOR")
+if (!is.null(wynik_topsis$wyniki)) 
+  kable(wynik_topsis$wyniki, caption = "Wyniki rozmytego TOPSIS")
+
+```
+
+## 6. Wizualizacja (Mapy decyzyjne)
+
+```{r}
+
+library(patchwork)
+library(ggplot2)
+
+p1 <- plot(wynik_vikor) + ggtitle("Mapa Strategiczna VIKOR") + theme_minimal()
+p2 <- plot(wynik_topsis) + ggtitle("Mapa Efektywności TOPSIS") + theme_minimal()
+p1 <- p1 + theme(plot.margin = margin(10, 10, 10, 10))
+p2 <- p2 + theme(plot.margin = margin(10, 10, 10, 10))
+
+# patchwork z osobnymi legendami
+p1 + p2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+```
+
+## 7. Meta-Ranking (Konsensus)
+
+```{r}
+meta_wynik <- rozmyty_meta_ranking(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow    = typy,
+  bwm_najlepsze     = bwm_best,
+  bwm_najgorsze     = bwm_worst
+)
+
+if (!is.null(meta_wynik$porownanie))
+  kable(meta_wynik$porownanie, caption = "Porównanie rankingów i konsensus")
+
+```
+
+## 8. Szybkie użycie – funkcja `cyber()`
+
+```{r cyber-demo, eval=FALSE}
+# Domyślna wersja – wagi BWM generowane automatycznie przez funkcję
+cyber()
+
+# Wersja alternatywna – wagi z entropii Shannona
+cyber("entropia")
