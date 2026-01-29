@@ -194,7 +194,7 @@ cyber <- function(wagi = "bwm", ...) {
                 packet_load =~ packet_load; penetration =~ penetration;
                 security_det =~ security_det; asset_crit =~ asset_crit;
                 geo_risk =~ geo_risk",
-    kolumna_alternatyw = "Attack Type"
+    kolumna_alternatyw = "Alternative"
   )
 
   typy <- CRITERIA_DIRECTION

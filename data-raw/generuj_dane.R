@@ -1,86 +1,116 @@
-# data-raw/generuj_dane.R
 # =============================================================================
-# Skrypt wczytujący i przetwarzający dane z CSV "cybersecurity_attacks.csv"
-# dla problemu MCDA w cyberbezpieczeństwie. Dane są agregowane po typie ataku
-# i przygotowane do użycia w metodach jak TOPSIS, Fuzzy TOPSIS itp.
-# Dostosowano z oryginalnego skryptu symulującego dane MCDA.
+# generuj_dane.R
 # =============================================================================
 
-# Ustawiamy ziarno losowości, aby wyniki były powtarzalne (choć dla rzeczywistych danych mniej istotne)
-set.seed(123)
-
-# Wymagane biblioteki (dodaj do DESCRIPTION jeśli potrzeba)
 library(readr)
 library(dplyr)
 library(lubridate)
 library(stringr)
+library(usethis)
 
-# Ścieżka do pliku CSV (dostosuj jeśli potrzeba; zakładam strukturę pakietu)
+set.seed(123)
+
 csv_path <- "inst/ext-data/cybersecurity_attacks.csv"
 
-# Wczytanie surowych danych z CSV
+# ------------------------------------------------------------
+# 1. Wczytanie danych surowych
+# ------------------------------------------------------------
 cyber_raw <- read_csv(csv_path, col_types = cols(.default = "c"))
-
 message("Wczytano ", nrow(cyber_raw), " rekordów z CSV.")
 
-# Przetwarzanie danych (podobnie jak w prepare_cyberdata.R i cyber_attacks_10k.R)
+# ------------------------------------------------------------
+# 2. Inżynieria cech
+# ------------------------------------------------------------
 cyber_attacks_processed <- cyber_raw %>%
   mutate(
     Timestamp = as.POSIXct(Timestamp, format = "%Y-%m-%d %H:%M:%S"),
-    `Severity Level` = factor(`Severity Level`, levels = c("Low", "Medium", "High")),
+    Country = str_trim(`Geo-location Data`),
+    `Severity Level` = factor(`Severity Level`, levels = c("Low","Medium","High")),
     severity_num = case_when(
       `Severity Level` == "Low"    ~ 1,
       `Severity Level` == "Medium" ~ 2,
       `Severity Level` == "High"   ~ 3,
-      TRUE                         ~ 2  # Domyślna wartość dla brakujących
+      TRUE ~ 2
     ),
     malware_ind = ifelse(`Malware Indicators` == "IoC Detected", 1, 0),
-    anomaly_score = as.numeric(`Anomaly Scores`),  # Konwersja na numeryczne
-    packet_length = as.numeric(`Packet Length`),   # Konwersja na numeryczne
+    anomaly_score = parse_number(`Anomaly Scores`),
+    packet_length  = parse_number(`Packet Length`),
     segment_depth = case_when(
       `Network Segment` == "Segment A" ~ 1,
       `Network Segment` == "Segment B" ~ 2,
       `Network Segment` == "Segment C" ~ 3,
-      TRUE ~ 2  # Domyślna wartość
+      TRUE ~ 2
     ),
-    security_signals = (
+    security_signals =
       (`Alerts/Warnings` == "Alert Triggered") +
-        (!is.na(`Firewall Logs`) & str_trim(`Firewall Logs`) != "") +
-        (!is.na(`IDS/IPS Alerts`) & str_trim(`IDS/IPS Alerts`) != "")
-    ),
-    asset_crit_len = nchar(coalesce(`User Information`, "")) + nchar(coalesce(`Device Information`, "")),
+      (!is.na(`Firewall Logs`) & str_trim(`Firewall Logs`) != "") +
+      (!is.na(`IDS/IPS Alerts`) & str_trim(`IDS/IPS Alerts`) != ""),
+    asset_crit_len =
+      nchar(coalesce(`User Information`, "")) +
+      nchar(coalesce(`Device Information`, "")),
     high_risk_geo = ifelse(
-      grepl("China|Russia|Iran|Korea|Pakistan", `Geo-location Data`, ignore.case = TRUE),
-      1, 0  # 1 jeśli kraj wysokiego ryzyka, 0 inaczej
+      grepl("China|Russia|Iran|Korea|Pakistan", Country, ignore.case = TRUE), 1, 0
     ),
     `Attack Type` = as.factor(`Attack Type`)
   ) %>%
-  # Filtrowanie brakujących wartości (np. anomaly_score nie może być NA)
-  filter(!is.na(anomaly_score), !is.na(packet_length)) %>%
-  # Agregacja po typie ataku (alternatywy w MCDA) – średnie i liczniki dla kryteriów
-  group_by(`Attack Type`) %>%
+  filter(
+    !is.na(anomaly_score),
+    !is.na(packet_length),
+    !is.na(Country),
+    Country != ""
+  )
+
+cat("Wiersze po inżynierii cech: ", nrow(cyber_attacks_processed), "\n")
+
+# ------------------------------------------------------------
+# 3. Tworzenie 3 alternatyw na (Country × Attack Type)
+# ------------------------------------------------------------
+
+# Najpierw upewniamy się, że każda grupa ma co najmniej 20 wierszy
+group_sizes <- cyber_attacks_processed %>%
+  group_by(Country, `Attack Type`) %>%
+  summarise(n_rows = n(), .groups = "drop")
+
+# Zachowujemy tylko grupy >= 20
+valid_groups <- group_sizes %>%
+  filter(n_rows >= 20) %>%
+  select(Country, `Attack Type`)
+
+cyber_attacks_processed <- cyber_attacks_processed %>%
+  semi_join(valid_groups, by = c("Country", "Attack Type")) %>%
+  group_by(Country, `Attack Type`) %>%
+  mutate(alternative_id = ntile(row_number(), 3)) %>%
+  ungroup() %>%
+  mutate(Alternative = paste(Country, `Attack Type`, alternative_id, sep = ".")) %>%
+  group_by(Alternative, Country, `Attack Type`) %>%
   summarise(
-    n = n(),  # Liczba incydentów (do filtrowania min_attacks w prepare_cyber_criteria)
-    severity = mean(severity_num, na.rm = TRUE),        # Średni poziom powagi (cost)
-    malware = mean(malware_ind, na.rm = TRUE),          # Średni wskaźnik malware (cost)
-    anomaly = mean(anomaly_score, na.rm = TRUE),        # Średni wynik anomalii (cost)
-    packet_load = mean(packet_length, na.rm = TRUE),    # Średnia długość pakietów (cost)
-    penetration = mean(segment_depth, na.rm = TRUE),    # Średnia głębokość penetracji (cost)
-    security_det = mean(security_signals, na.rm = TRUE),# Średnia liczba sygnałów bezpieczeństwa (benefit)
-    asset_crit = mean(asset_crit_len, na.rm = TRUE),    # Średnia krytyczność zasobu (benefit)
-    geo_risk = mean(high_risk_geo, na.rm = TRUE),       # Średni ryzyko geo (cost)
+    n = n(),
+    severity     = mean(severity_num, na.rm = TRUE),
+    malware      = mean(malware_ind, na.rm = TRUE),
+    anomaly      = mean(anomaly_score, na.rm = TRUE),
+    packet_load  = mean(packet_length, na.rm = TRUE),
+    penetration  = mean(segment_depth, na.rm = TRUE),
+    security_det = mean(security_signals, na.rm = TRUE),
+    asset_crit   = mean(asset_crit_len, na.rm = TRUE),
+    geo_risk     = mean(high_risk_geo, na.rm = TRUE),
     .groups = "drop"
   ) %>%
-  # Filtrowanie typów ataków z minimum 20 incydentami (jak w prepare_cyber_criteria)
-  filter(n >= 20) %>%
-  arrange(desc(n))
+  arrange(Country, `Attack Type`, Alternative)
 
-# Wyświetlenie podsumowania (opcjonalne, dla debugowania)
-cat("\nTypy ataków po agregacji:\n")
-print(table(cyber_attacks_processed$`Attack Type`))
+# ------------------------------------------------------------
+# 4. Diagnostyka
+# ------------------------------------------------------------
+cat("\nLiczba alternatyw MCDA:\n")
+print(nrow(cyber_attacks_processed))
 
-message("\nPrzetworzono dane. Jest ", nrow(cyber_attacks_processed), " różnych typów ataków po agregacji.")
+cat("\nAlternatywy na (Country × Attack Type):\n")
+print(
+  cyber_attacks_processed %>%
+    count(Country, `Attack Type`) %>%
+    summarise(min = min(n), max = max(n))
+)
 
-# KROK KLUCZOWY: Zapisanie przetworzonych danych do folderu pakietu /data
-# Funkcja use_data automatycznie kompresuje dane do formatu .rda
+# ------------------------------------------------------------
+# 5. Zapis danych do pakietu
+# ------------------------------------------------------------
 usethis::use_data(cyber_attacks_processed, overwrite = TRUE)

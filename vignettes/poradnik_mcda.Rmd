@@ -48,7 +48,7 @@ skladnia_modelu <- "
 macierz_rozmyta <- przygotuj_dane_mcda(
   dane               = cyber_attacks_processed,
   skladnia           = skladnia_modelu,
-  kolumna_alternatyw = "Attack Type"
+  kolumna_alternatyw = "Alternative"
 )
 
 print(macierz_rozmyta[1:min(5, nrow(macierz_rozmyta)), 1:min(6, ncol(macierz_rozmyta))])

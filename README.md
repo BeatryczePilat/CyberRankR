@@ -48,7 +48,7 @@ macierz <- przygotuj_dane_mcda(
     asset_crit   =~ asset_crit;
     geo_risk     =~ geo_risk
   ",
-  kolumna_alternatyw = "Attack Type"
+  kolumna_alternatyw = "Alternative"
 )
 ```
 
