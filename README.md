@@ -28,7 +28,7 @@ devtools::install_github("BeatryczePilat/CyberRankR")
 
 ``` r
 library(CyberRankR)
-data(cyber_attacks_processed)
+data(cyber_expert_panel)
 ```
 
 ------------------------------------------------------------------------
@@ -37,7 +37,7 @@ data(cyber_attacks_processed)
 
 ``` r
 macierz <- przygotuj_dane_mcda(
-  dane = cyber_attacks_processed,
+  dane = cyber_expert_panel,
   skladnia = "
     severity     =~ severity;
     malware      =~ malware;

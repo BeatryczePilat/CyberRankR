@@ -36,6 +36,6 @@
 #'     kryterium kosztowe)}
 #' }
 #'
-#' @usage data(cyber_attacks_processed)
-#' @name cyber_attacks_processed
+#' @usage data(cyber_expert_panel)
+#' @name cyber_expert_panel
 NULL

@@ -20,11 +20,11 @@ library(patchwork)
 
 ## 1. Wczytanie danych
 
-Korzystamy z wbudowanego w pakiet zbioru danych `cyber_attacks_processed`.
+Korzystamy z wbudowanego w pakiet zbioru danych `cyber_expert_panel`.
 
 ```{r}
-data("cyber_attacks_processed", package = "CyberRankR")
-head(cyber_attacks_processed, 8)
+data("cyber_expert_panel", package = "CyberRankR")
+head(cyber_expert_panel, 8)
 ```
 
 ## 2. Definicja modelu (Składnia)
@@ -46,7 +46,7 @@ skladnia_modelu <- "
 
 ```{r}
 macierz_rozmyta <- przygotuj_dane_mcda(
-  dane               = cyber_attacks_processed,
+  dane               = cyber_expert_panel,
   skladnia           = skladnia_modelu,
   kolumna_alternatyw = "Alternative"
 )

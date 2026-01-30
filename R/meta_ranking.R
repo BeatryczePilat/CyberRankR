@@ -127,7 +127,6 @@ rozmyty_meta_ranking <- function(macierz_decyzyjna,
   ranking_dominacja <- .oblicz_ranking_dominacji(r_vikor, r_topsis, r_waspas)
 
   # C. RankAggreg (Algorytm Brute Force)
-  # RankAggreg wymaga listy uporządkowanych indeksów, a nie wektora rang!
   # order() zamienia [RangaAlt1=2, RangaAlt2=1] na [2, 1] (czyli: Index2 wygrywa, Index1 drugi)
   macierz_dla_ra <- rbind(
     order(r_vikor),
@@ -172,7 +171,8 @@ rozmyty_meta_ranking <- function(macierz_decyzyjna,
 
   wynik <- list(
     porownanie = porownanie_df,
-    korelacje = macierz_kor
+    korelacje = macierz_kor,
+    wagi_ostre = wagi[seq(1, length(wagi), 3)]
   )
 
   return(wynik)
@@ -185,15 +185,25 @@ rozmyty_meta_ranking <- function(macierz_decyzyjna,
 #' @export
 cyber <- function(wagi = "bwm", ...) {
 
-  # Ładujemy dane automatycznie
-  data(cyber_attacks_processed, envir = environment())
+  data(cyber_expert_panel, envir = environment())
+
+    CRITERIA_DIRECTION <- c(
+    severity   = "max",
+    anomaly    = "min",
+    complexity = "max",
+    impact     = "max",
+    stealth    = "min"
+  )
 
   macierz <- przygotuj_dane_mcda(
-    dane = cyber_attacks_processed,
-    skladnia = "severity =~ severity; malware =~ malware; anomaly =~ anomaly;
-                packet_load =~ packet_load; penetration =~ penetration;
-                security_det =~ security_det; asset_crit =~ asset_crit;
-                geo_risk =~ geo_risk",
+    dane = cyber_expert_panel,
+    skladnia = "
+    severity   =~ crit_severity;
+    anomaly    =~ crit_anomaly;
+    complexity =~ crit_complexity;
+    impact     =~ crit_impact;
+    stealth    =~ crit_stealth
+  ",
     kolumna_alternatyw = "Alternative"
   )
 
@@ -206,12 +216,18 @@ cyber <- function(wagi = "bwm", ...) {
   } else {
     message("Używam wag BWM (domyślna konfiguracja)...")
     bwm_najlepsze <- c(
-      severity=3, malware=4, anomaly=1, packet_load=5,
-      penetration=6, security_det=9, asset_crit=8, geo_risk=2
+      severity   = 3,
+      anomaly    = 1,  # BEST
+      complexity = 7,
+      impact     = 2,
+      stealth    = 4
     )
     bwm_najgorsze <- c(
-      severity=6, malware=5, anomaly=8, packet_load=4,
-      penetration=3, security_det=1, asset_crit=2, geo_risk=7
+      severity   = 4,
+      anomaly    = 7,
+      complexity = 1,  # WORST
+      impact     = 5,
+      stealth    = 3
     )
     wynik <- rozmyty_meta_ranking(
       macierz, typy,
@@ -221,7 +237,20 @@ cyber <- function(wagi = "bwm", ...) {
     )
   }
 
-  # Drukujemy od razu ładną tabelkę
+  wagi_do_plotow <- rep(wynik$wagi_ostre, each = 3) # jeśli funkcja zwraca wagi_ostre
+
+  # 2. Generujemy obiekty do plotowania
+  # Podajemy jawnie typy i wagi, żeby uniknąć błędu '.pobierz_finalne_wagi'
+  message("\nGeneruję wizualizacje...")
+
+  w_topsis <- rozmyty_topsis(macierz, typy_kryteriow = typy, wagi = wagi_do_plotow)
+  w_vikor  <- rozmyty_vikor(macierz, typy_kryteriow = typy, wagi = wagi_do_plotow)
+
+  # Wyświetlamy oba wykresy
+  print(plot(w_topsis))
+  print(plot(w_vikor))
+
+  # 3. Druk tabeli (to już masz)
   cat("\n┌───────────────────────────────────────────────┐\n")
   cat("│               META-RANKING CYBER                 │\n")
   cat("└───────────────────────────────────────────────┘\n\n")
@@ -231,5 +260,5 @@ cyber <- function(wagi = "bwm", ...) {
   cat("\nKorelacje Spearmana:\n")
   print(round(wynik$korelacje, 2))
 
-  invisible(wynik)   # wynik nadal dostępny w konsoli
+  invisible(wynik)
 }
