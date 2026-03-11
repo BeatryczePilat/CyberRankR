@@ -66,7 +66,7 @@ plot.rozmyty_vikor_wynik <- function(x, ...) {
 
     # Bąble
     geom_point(aes(size = Rozmiar, fill = Wydajnosc), shape = 21, color = "black", alpha = 0.8) +
-    geom_text_repel(aes(label = Alternatywa), box.padding = 0.5) +
+    geom_text_repel(aes(label = paste0("Alt ", Alternatywa)), box.padding = 0.5) +
 
     scale_x_continuous(expand = expansion(mult = 0.2)) +
 
@@ -112,7 +112,7 @@ plot.rozmyty_topsis_wynik <- function(x, ...) {
 
     # Bąble
     geom_point(aes(size = Rozmiar, fill = Wynik), shape = 21, color = "black", alpha = 0.9) +
-    geom_text_repel(aes(label = Alternatywa), box.padding = 0.6) +
+    geom_text_repel(aes(label = paste0("Alt ", Alternatywa)), box.padding = 0.6) +
 
     # Marker Idealu (Złoty romb)
     annotate("point", x = cel_x, y = cel_y, shape=18, size=6, color="#FFD700") +
@@ -150,7 +150,7 @@ plot.rozmyty_waspas_wynik <- function(x, ...) {
     geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey50") +
 
     geom_point(aes(size = Wynik^3, fill = Spojnosc), shape = 21, color = "black", alpha = 0.8) +
-    geom_text_repel(aes(label = Alternatywa), box.padding = 0.5) +
+    geom_text_repel(aes(label = paste0("Alt ", Alternatywa)), box.padding = 0.5) +
 
     labs(
       title = "Mapa Spójności WASPAS",
@@ -165,3 +165,4 @@ plot.rozmyty_waspas_wynik <- function(x, ...) {
 
 # Fix dla ostrzeżeń R CMD check o zmiennych globalnych w ggplot2
 utils::globalVariables(c("Def_S", "Def_R", "D_plus", "D_minus", "Wynik", "WSM", "WPM", "Wydajnosc", "Rozmiar", "OdlegloscWizualna", "Spojnosc", "Alternatywa"))
+

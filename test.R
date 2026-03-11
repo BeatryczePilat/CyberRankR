@@ -24,7 +24,7 @@ macierz_rozmyta <- przygotuj_dane_mcda(
     impact     =~ crit_impact;
     stealth    =~ crit_stealth
   ",
-  kolumna_alternatyw = "Alternative" 
+  kolumna_alternatyw = "Alternative"
 )
 
 # --- KROK 2: Bezpieczne wyliczenie wag (BWM) ---
@@ -47,26 +47,26 @@ cat("\n[OK] Dane i wagi przygotowane. Przechodzę do analizy...\n")
 # A) Fuzzy TOPSIS
 # Szuka dystansu do rozwiązania idealnego i anty-idealnego.
 topsis_wynik <- rozmyty_topsis(
-  macierz_decyzyjna = macierz_rozmyta, 
-  typy_kryteriow = poprawione_typy, 
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = poprawione_typy,
   wagi = wagi_rozmyte
 )
 
 # B) Fuzzy VIKOR
 # Metoda kompromisowa. Parametr v = 0.5 oznacza zrównoważoną wagę strategii "większości kryteriów"
 vikor_wynik <- rozmyty_vikor(
-  macierz_decyzyjna = macierz_rozmyta, 
-  typy_kryteriow = poprawione_typy, 
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = poprawione_typy,
   wagi = wagi_rozmyte,
-  v = 0.5 
+  v = 0.5
 )
 
 # C) Fuzzy WASPAS
-# Łączy sumę ważoną (WSM) z iloczynem ważonym (WPM). 
+# Łączy sumę ważoną (WSM) z iloczynem ważonym (WPM).
 # Parametr lambda = 0.5 daje równą wagę obu podejściom.
 waspas_wynik <- rozmyty_waspas(
-  macierz_decyzyjna = macierz_rozmyta, 
-  typy_kryteriow = poprawione_typy, 
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = poprawione_typy,
   wagi = wagi_rozmyte,
   lambda = 0.5
 )
@@ -81,7 +81,6 @@ meta_wynik <- rozmyty_meta_ranking(
 cat("[OK] Modele przeliczone.\n")
 
 # --- KROK 4: Generowanie Wykresów (Wizualizacje) ---
-# Jeśli używasz RStudio, wykresy pojawią się w zakładce "Plots".
 
 cat("\nGenerowanie wykresów...\n")
 # 1. Mapa Efektywności TOPSIS (Idealny punkt to prawy dolny róg)
@@ -97,9 +96,7 @@ plot_waspas <- plot(waspas_wynik)
 print(plot_waspas)
 
 
-# --- KROK 5: Generowanie Tabel w formacie APA ---
-# Funkcje generują obiekty 'flextable'. W RStudio wyświetlą się w zakładce "Viewer" 
-# i są gotowe do skopiowania wprost do MS Word z zachowaniem stylów naukowych.
+# --- KROK 5: Generowanie Tabel w formacie APA ---.
 
 cat("\nGenerowanie tabel APA...\n")
 

@@ -9,14 +9,7 @@ library(stringr)
 library(usethis)
 
 set.seed(123)
-
-# Zakładamy, że plik jest w tym miejscu (dostosuj jeśli trzeba)
 csv_path <- "inst/ext-data/cybersecurity_attacks.csv"
-
-# Sprawdzenie czy plik istnieje (dla bezpieczeństwa)
-if (!file.exists(csv_path)) {
-  stop("Nie znaleziono pliku CSV. Upewnij się, że ścieżka jest poprawna.")
-}
 
 # ------------------------------------------------------------
 # 1. Wczytanie i Wstępne Czyszczenie
@@ -26,77 +19,55 @@ cyber_raw <- read_csv(csv_path, col_types = cols(.default = "c"))
 # ------------------------------------------------------------
 # 2. Definicja Panelu Eksperckiego i Alternatyw
 # ------------------------------------------------------------
-
-# KROK A: Wybieramy "Panel Ekspertów" (Top 20 krajów z największą liczbą danych)
-# To symuluje, że mamy 20 ekspertów (reprezentujących regiony), którzy oceniają ataki.
+# mamy 20 ekspertów (reprezentujących regiony), którzy oceniają ataki.
 top_countries <- cyber_raw %>%
   count(`Geo-location Data`, sort = TRUE) %>%
   head(20) %>%
   pull(`Geo-location Data`)
 
-# KROK B: Wybieramy "Alternatywy" (3 główne typy ataków)
-# Chcemy rankingować: Malware vs DDoS vs Intrusion
+#3 główne typy ataków
 target_attacks <- c("Malware", "DDoS", "Intrusion")
 
 # ------------------------------------------------------------
 # 3. Przetwarzanie Ocen (Ekspert -> Alternatywa)
 # ------------------------------------------------------------
-
 cyber_expert_panel <- cyber_raw %>%
-  # Filtrujemy tylko wybranych ekspertów i alternatywy
   filter(
     `Geo-location Data` %in% top_countries,
     `Attack Type` %in% target_attacks
   ) %>%
   mutate(
-    # --- Konwersja Kryteriów na Liczby ---
-
-    # 1. Severity (Dotkliwość) -> Skala 1-9
     severity_score = case_when(
       `Severity Level` == "Low"    ~ 2,
       `Severity Level` == "Medium" ~ 5,
       `Severity Level` == "High"   ~ 9,
       TRUE ~ 5
     ),
-
-    # 2. Anomaly Score (Poziom Anomalii) -> Ciągła
-    anomaly_score = parse_number(`Anomaly Scores`),
-
-    # 3. Technical Complexity (Długość pakietu) -> Ciągła
-    tech_complexity = parse_number(`Packet Length`),
-
-    # 4. Impact Depth (Głębokość penetracji sieci) -> Skala 1-9
+    anomaly_score = as.numeric(`Anomaly Scores`),
+    tech_complexity = as.numeric(`Packet Length`),
     impact_depth = case_when(
-      `Network Segment` == "Segment A" ~ 3, # Płytko
+      `Network Segment` == "Segment A" ~ 3,
       `Network Segment` == "Segment B" ~ 6,
-      `Network Segment` == "Segment C" ~ 9, # Głęboko (Critical)
+      `Network Segment` == "Segment C" ~ 9,
       TRUE ~ 5
     ),
-
-    # 5. Detection Difficulty (Trudność wykrycia) -> Odwrócona logika
-    # Jeśli firewall to złapał, to łatwo wykryć (niski score). Jeśli nie - wysoki.
-    logs_present = (!is.na(`Firewall Logs`) & `Firewall Logs` != ""),
-    detect_difficulty = ifelse(logs_present, 2, 8)
+    detect_difficulty = ifelse(is.na(`Firewall Logs`) | `Firewall Logs` == "", 8, 2)
   ) %>%
-  # --- KLUCZOWY MOMENT: Agregacja ---
-  # Dla każdego Kraju (Eksperta) i Ataku (Alternatywy) liczymy średnią ocenę.
-  group_by(`Geo-location Data`, `Attack Type`) %>%
+  group_by(ExpertID = `Geo-location Data`, Alternative = `Attack Type`) %>%
   summarise(
-    crit_severity   = mean(severity_score, na.rm = TRUE),
-    crit_anomaly    = mean(anomaly_score, na.rm = TRUE),
-    crit_complexity = mean(tech_complexity, na.rm = TRUE),
-    crit_impact     = mean(impact_depth, na.rm = TRUE),
-    crit_stealth    = mean(detect_difficulty, na.rm = TRUE),
+    # ZMIANA: Kwantyl 0.9 zamiast mean(). Szukamy najgroźniejszych incydentów.
+    crit_severity   = quantile(severity_score, 0.9, na.rm = TRUE),
+    crit_anomaly    = quantile(anomaly_score, 0.9, na.rm = TRUE),
+    crit_complexity = quantile(tech_complexity, 0.9, na.rm = TRUE),
+    crit_impact     = max(impact_depth, na.rm = TRUE),
+    crit_stealth    = quantile(detect_difficulty, 0.9, na.rm = TRUE),
     .groups = "drop"
   ) %>%
-  # Zmiana nazw dla jasności pakietu
-  rename(
-    ExpertID = `Geo-location Data`,
-    Alternative = `Attack Type`
-  ) %>%
-  # Sortowanie dla porządku
   arrange(ExpertID, Alternative)
-
+set.seed(42)
+weights_matrix <- matrix(runif(20 * 5), nrow = 20, ncol = 5)
+weights_matrix <- weights_matrix / rowSums(weights_matrix)
+colnames(weights_matrix) <- c("crit_severity", "crit_anomaly", "crit_complexity", "crit_impact", "crit_stealth")
 # ------------------------------------------------------------
 # 4. Diagnostyka i Zapis
 # ------------------------------------------------------------

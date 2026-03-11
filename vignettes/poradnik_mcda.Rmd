@@ -9,13 +9,13 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  echo = TRUE
+  fig.width = 10,
+  fig.height = 8
 )
 library(CyberRankR)
 library(knitr)
 library(patchwork)
+library(ggplot2)
 ```
 
 ## 1. Wczytanie danych
@@ -24,108 +24,134 @@ Korzystamy z wbudowanego w pakiet zbioru danych `cyber_expert_panel`.
 
 ```{r}
 data("cyber_expert_panel", package = "CyberRankR")
-head(cyber_expert_panel, 8)
+head(cyber_expert_panel)
 ```
 
-## 2. Definicja modelu (Składnia)
-
-```{r}
-skladnia_modelu <- "
-  severity     =~ severity;
-  malware      =~ malware;
-  anomaly      =~ anomaly;
-  packet_load  =~ packet_load;
-  penetration  =~ penetration;
-  security_det =~ security_det;
-  asset_crit   =~ asset_crit;
-  geo_risk     =~ geo_risk
-"
-```
-
-## 3. Przetwarzanie i rozmywanie danych
+## 2. Budowa rozmytej macierzy decyzyjnej
 
 ```{r}
 macierz_rozmyta <- przygotuj_dane_mcda(
-  dane               = cyber_expert_panel,
-  skladnia           = skladnia_modelu,
+  dane = cyber_expert_panel,
+  skladnia = "
+    severity   =~ crit_severity;
+    anomaly    =~ crit_anomaly;
+    complexity =~ crit_complexity;
+    impact     =~ crit_impact;
+    stealth    =~ crit_stealth
+  ",
   kolumna_alternatyw = "Alternative"
 )
 
-print(macierz_rozmyta[1:min(5, nrow(macierz_rozmyta)), 1:min(6, ncol(macierz_rozmyta))])
-
+head(macierz_rozmyta)
 ```
 
-## 4. Typy kryteriów
+## 3. Definicja typów kryteriów
 
 ```{r}
-typy <- rep("max", ncol(macierz_rozmyta))
-
+typy_kryteriow <- c(
+  severity   = "max",
+  anomaly    = "min",
+  complexity = "max",
+  impact     = "max",
+  stealth    = "min"
+)
 ```
 
-## 5. Analiza decyzyjna (VIKOR i TOPSIS)
+## 4. Wyznaczanie wag metodą BWM
 
 ```{r}
-bwm_best  <- c(1, 5, 6, 4, 3, 7, 2, 8)  # Najlepszy = 1
-bwm_worst <- c(8, 6, 5, 7, 4, 3, 2, 1)  # Najgorszy = 1
-
-wynik_vikor <- rozmyty_vikor(
-  macierz_decyzyjna = macierz_rozmyta,
-  typy_kryteriow    = typy,
-  bwm_najlepsze     = bwm_best,
-  bwm_najgorsze     = bwm_worst
+wektor_najlepsze <- c(
+  severity = 3,
+  anomaly = 1,
+  complexity = 7,
+  impact = 2,
+  stealth = 4
 )
 
-wynik_topsis <- rozmyty_topsis(
-  macierz_decyzyjna = macierz_rozmyta,
-  typy_kryteriow    = typy,
-  bwm_najlepsze     = bwm_best,
-  bwm_najgorsze     = bwm_worst
+wektor_najgorsze <- c(
+  severity = 4,
+  anomaly = 7,
+  complexity = 1,
+  impact = 5,
+  stealth = 3
 )
 
-if (!is.null(wynik_vikor$wyniki)) 
-  kable(wynik_vikor$wyniki, caption = "Wyniki rozmytego VIKOR")
-if (!is.null(wynik_topsis$wyniki)) 
-  kable(wynik_topsis$wyniki, caption = "Wyniki rozmytego TOPSIS")
+wynik_bwm <- oblicz_wagi_bwm(
+  nazwy_kryteriow = names(wektor_najlepsze),
+  najlepsze_do_innych = as.numeric(wektor_najlepsze),
+  inne_do_najgorszego = as.numeric(wektor_najgorsze)
+)
 
+wagi_rozmyte <- rep(wynik_bwm$wagi_kryteriow, each = 3)
+
+wynik_bwm$wagi_kryteriow
+```
+
+## 5. Analiza decyzyjna MCDA
+
+Fuzzy TOPSIS
+```{r}
+topsis_wynik <- rozmyty_topsis(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte
+)
+```
+Fuzzy VIKOR
+```{r}
+vikor_wynik <- rozmyty_vikor(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte,
+  v = 0.5
+)
+```
+Fuzzy WASPAS
+```{r}
+waspas_wynik <- rozmyty_waspas(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte,
+  lambda = 0.5
+)
 ```
 
 ## 6. Wizualizacja (Mapy decyzyjne)
 
 ```{r}
+plot(topsis_wynik)
+plot(vikor_wynik)
+plot(waspas_wynik)
+```
 
-library(patchwork)
-library(ggplot2)
+Możemy również zestawić wykresy razem:
 
-p1 <- plot(wynik_vikor) + ggtitle("Mapa Strategiczna VIKOR") + theme_minimal()
-p2 <- plot(wynik_topsis) + ggtitle("Mapa Efektywności TOPSIS") + theme_minimal()
-p1 <- p1 + theme(plot.margin = margin(10, 10, 10, 10))
-p2 <- p2 + theme(plot.margin = margin(10, 10, 10, 10))
+```{r}
+p1 <- plot(topsis_wynik) + ggtitle("Mapa Efektywności TOPSIS")
+p2 <- plot(vikor_wynik) + ggtitle("Mapa Strategiczna VIKOR")
 
-# patchwork z osobnymi legendami
-p1 + p2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+p1 + p2
 
 ```
 
-## 7. Meta-Ranking (Konsensus)
+## 7. Meta-Ranking (konsensus metod)
 
 ```{r}
 meta_wynik <- rozmyty_meta_ranking(
   macierz_decyzyjna = macierz_rozmyta,
-  typy_kryteriow    = typy,
-  bwm_najlepsze     = bwm_best,
-  bwm_najgorsze     = bwm_worst
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte
 )
 
-if (!is.null(meta_wynik$porownanie))
-  kable(meta_wynik$porownanie, caption = "Porównanie rankingów i konsensus")
+meta_wynik
 
 ```
 
-## 8. Szybkie użycie – funkcja `cyber()`
+## 8. Generowanie tabel w stylu APA
 
-```{r cyber-demo, eval=FALSE}
-# Domyślna wersja – wagi BWM generowane automatycznie przez funkcję
-cyber()
-
-# Wersja alternatywna – wagi z entropii Shannona
-cyber("entropia")
+```{r}
+tabela_apa(topsis_wynik)
+tabela_apa(vikor_wynik)
+tabela_apa(waspas_wynik)
+tabela_apa(meta_wynik)
+```

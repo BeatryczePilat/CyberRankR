@@ -3,11 +3,13 @@ CyberRankR
 
 # CyberRankR
 
-Pakiet **CyberRankR** to kompleksowe narzędzie do wielokryterialnej
-analizy decyzyjnej (MCDA) w środowisku rozmytym. Umożliwia pełną ścieżkę
-analityczną: od surowych danych, przez wyznaczanie wag metodą **BWM
-(Best–Worst Method)** lub **entropii Shannona**, aż po rankingi metodami
-**TOPSIS, VIKOR, WASPAS** oraz meta-ranking konsensusowy.
+CyberRankR to pakiet do wielokryterialnej analizy decyzyjnej (MCDA) w
+środowisku rozmytym. Umożliwia pełny pipeline analityczny dla oceny
+zagrożeń cybernetycznych: - przygotowanie rozmytej macierzy
+decyzyjnej, - wyznaczanie wag metodą BWM (Best–Worst Method), - ranking
+metodami: Fuzzy TOPSIS, Fuzzy VIKOR, Fuzzy WASPAS, - agregację wyników w
+meta-ranking konsensusowy. Pakiet zawiera również funkcje do
+wizualizacji wyników oraz generowania tabel w stylu APA.
 
 ------------------------------------------------------------------------
 
@@ -36,17 +38,14 @@ data(cyber_expert_panel)
 ### 2. Przygotuj rozmytą macierz decyzyjną
 
 ``` r
-macierz <- przygotuj_dane_mcda(
+macierz_rozmyta <- przygotuj_dane_mcda(
   dane = cyber_expert_panel,
   skladnia = "
-    severity     =~ severity;
-    malware      =~ malware;
-    anomaly      =~ anomaly;
-    packet_load  =~ packet_load;
-    penetration  =~ penetration;
-    security_det =~ security_det;
-    asset_crit   =~ asset_crit;
-    geo_risk     =~ geo_risk
+    severity   =~ crit_severity;
+    anomaly    =~ crit_anomaly;
+    complexity =~ crit_complexity;
+    impact     =~ crit_impact;
+    stealth    =~ crit_stealth
   ",
   kolumna_alternatyw = "Alternative"
 )
@@ -54,87 +53,93 @@ macierz <- przygotuj_dane_mcda(
 
 ------------------------------------------------------------------------
 
-### 3. Ranking Fuzzy TOPSIS (wagi z entropii Shannona)
+### 3. Zdefiniuj typy kryteriów
 
 ``` r
-wynik <- cyber()
+typy_kryteriow <- c(
+  severity   = "max",
+  anomaly    = "min",
+  complexity = "max",
+  impact     = "max",
+  stealth    = "min"
+)
 ```
-
-    ## 
-    ## ┌───────────────────────────────────────────────┐
-    ## │               META-RANKING CYBER                 │
-    ## └───────────────────────────────────────────────┘
-    ## 
-    ##  Alternatywa R_VIKOR R_TOPSIS R_WASPAS Meta_Suma Meta_Dominacja Meta_Agregacja
-    ##         DDoS       3        3        1         3              3              3
-    ##    Intrusion       1        2        2         1              1              1
-    ##      Malware       2        1        3         2              2              2
-    ## 
-    ## Korelacje Spearmana:
-    ##                R_VIKOR R_TOPSIS R_WASPAS Meta_Suma Meta_Dominacja
-    ## R_VIKOR            1.0      0.5     -0.5       1.0            1.0
-    ## R_TOPSIS           0.5      1.0     -1.0       0.5            0.5
-    ## R_WASPAS          -0.5     -1.0      1.0      -0.5           -0.5
-    ## Meta_Suma          1.0      0.5     -0.5       1.0            1.0
-    ## Meta_Dominacja     1.0      0.5     -0.5       1.0            1.0
-    ## Meta_Agregacja     1.0      0.5     -0.5       1.0            1.0
-    ##                Meta_Agregacja
-    ## R_VIKOR                   1.0
-    ## R_TOPSIS                  0.5
-    ## R_WASPAS                 -0.5
-    ## Meta_Suma                 1.0
-    ## Meta_Dominacja            1.0
-    ## Meta_Agregacja            1.0
-
-``` r
-print(wynik$meta)
-```
-
-    ## NULL
 
 ------------------------------------------------------------------------
 
-### 4. Bonus: Fuzzy TOPSIS z wagami BWM
+### 4. Wyznacz wagi metodą BWM
 
 ``` r
-# anomaly najlepsze, security_det najgorsze
-bwm_najlepsze <- c(3, 4, 1, 5, 6, 9, 8, 2)
-bwm_najgorsze <- c(6, 5, 8, 4, 3, 1, 2, 7)
+wektor_najlepsze <- c(severity=3, anomaly=1, complexity=7, impact=2, stealth=4)
+wektor_najgorsze <- c(severity=4, anomaly=7, complexity=1, impact=5, stealth=3)
 
-wynik_bwm <- rozmyty_topsis(
-  macierz_decyzyjna = macierz,
-  typy_kryteriow = CRITERIA_DIRECTION,
-  bwm_najlepsze = bwm_najlepsze,
-  bwm_najgorsze = bwm_najgorsze
+wynik_bwm <- oblicz_wagi_bwm(
+  nazwy_kryteriow = names(wektor_najlepsze),
+  najlepsze_do_innych = as.numeric(wektor_najlepsze),
+  inne_do_najgorszego = as.numeric(wektor_najgorsze)
 )
 
-print(wynik_bwm$wyniki)
+wagi_rozmyte <- rep(wynik_bwm$wagi_kryteriow, each = 3)
 ```
-
-    ##   Alternatywa     D_plus    D_minus     Wynik Ranking
-    ## 1           1 0.25982678 0.25982678 0.5032334       3
-    ## 2           2 0.05579664 0.05579664 0.5046550       2
-    ## 3           3 0.16547960 0.16547960 0.5109540       1
-
-``` r
-plot(wynik_bwm)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ------------------------------------------------------------------------
 
-## Szybkie użycie – funkcja `cyber()`
+### 5. Analiza MCDA
 
-Jednym poleceniem możesz wykonać pełną analizę (VIKOR + TOPSIS +
-WASPAS + konsensus):
+Fuzzy TOPSIS
 
 ``` r
-# Domyślna wersja – wagi BWM (zalecana)
-cyber()
+topsis_wynik <- rozmyty_topsis(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte
+)
+```
 
-# Wersja alternatywna – wagi z entropii Shannona
-cyber("entropia")
+Fuzzy VIKOR
+
+``` r
+vikor_wynik <- rozmyty_vikor(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte,
+  v = 0.5
+)
+```
+
+Fuzzy WASPAS
+
+``` r
+waspas_wynik <- rozmyty_waspas(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte,
+  lambda = 0.5
+)
+```
+
+Meta-ranking (konsensus metod)
+
+``` r
+meta_wynik <- rozmyty_meta_ranking(
+  macierz_decyzyjna = macierz_rozmyta,
+  typy_kryteriow = typy_kryteriow,
+  wagi = wagi_rozmyte
+)
+```
+
+------------------------------------------------------------------------
+
+### 6. Wizualizacja wyników i tabele APA
+
+``` r
+plot(topsis_wynik) 
+plot(vikor_wynik) 
+plot(waspas_wynik)
+tabela_apa(topsis_wynik) 
+tabela_apa(vikor_wynik) 
+tabela_apa(waspas_wynik) 
+tabela_apa(meta_wynik)
 ```
 
 ------------------------------------------------------------------------
