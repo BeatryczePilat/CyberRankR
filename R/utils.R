@@ -24,14 +24,11 @@
 #'
 #' @export
 CRITERIA_DIRECTION <- c(
-  severity      = "cost",
-  malware       = "cost",
-  anomaly       = "cost",
-  packet_load   = "cost",
-  penetration   = "cost",
-  security_det  = "benefit",
-  asset_crit    = "benefit",
-  geo_risk      = "cost"
+  severity   = "max",
+  anomaly    = "min",
+  complexity = "max",
+  impact     = "max",
+  stealth    = "min"
 )
 
 

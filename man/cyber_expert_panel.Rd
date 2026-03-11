@@ -4,30 +4,15 @@
 \alias{cyber_expert_panel}
 \title{Zagregowane dane o incydentach cyberbezpieczeństwa do analizy MCDA}
 \format{
-Ramka danych (data frame) z następującymi zmiennymi:
+Ramka danych (data frame) o 60 wierszach i 7 kolumnach:
 \describe{
-  \item{Alternative}{Identyfikator alternatywy MCDA (Country.AttackType.id)}
-  \item{Country}{Kraj pochodzenia ataku}
-  \item{Attack Type}{Typ ataku cybernetycznego}
-  \item{n}{Liczba zarejestrowanych incydentów danego typu}
-  \item{severity}{Średni poziom powagi ataku
-    (skala porządkowa 1--3: 1 = Low, 2 = Medium, 3 = High; kryterium kosztowe)}
-  \item{malware}{Średni udział incydentów z wykrytym malware
-    (0 = brak, 1 = wykryto; kryterium kosztowe)}
-  \item{anomaly}{Średni wynik anomalii sieciowej
-    (zmienna ciągła; kryterium kosztowe)}
-  \item{packet_load}{Średnia długość pakietów sieciowych
-    (wartości liczbowe; kryterium kosztowe)}
-  \item{penetration}{Średnia głębokość penetracji sieci
-    (skala porządkowa 1--3; kryterium kosztowe)}
-  \item{security_det}{Średnia liczba sygnałów bezpieczeństwa
-    (alerty, logi, IDS/IPS; kryterium typu benefit)}
-  \item{asset_crit}{Średnia krytyczność zasobów,
-    mierzona długością informacji o użytkowniku i urządzeniu
-    (kryterium typu benefit)}
-  \item{geo_risk}{Średni wskaźnik ryzyka geograficznego
-    (0 = kraj niskiego ryzyka, 1 = kraj wysokiego ryzyka;
-    kryterium kosztowe)}
+  \item{ExpertID}{Identyfikator eksperta (Geo-location Data)}
+  \item{Alternative}{Typ ataku cybernetycznego (DDoS, Malware, Intrusion)}
+  \item{crit_severity}{Dotkliwość ataku (skala 1-9)}
+  \item{crit_anomaly}{Średni poziom anomalii (wartość ciągła)}
+  \item{crit_complexity}{Techniczna złożoność ataku / długość pakietu}
+  \item{crit_impact}{Głębokość penetracji sieci (skala 1-9)}
+  \item{crit_stealth}{Trudność wykrycia ataku (skala odwrócona, 1-9)}
 }
 }
 \usage{
