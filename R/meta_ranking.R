@@ -169,10 +169,12 @@ rozmyty_meta_ranking <- function(macierz_decyzyjna,
   # Macierz korelacji Spearmana (czy metody są zgodne?)
   macierz_kor <- cor(porownanie_df[,-1], method = "spearman")
 
+  wagi_wyjsciowe <- if (!is.null(wagi)) wagi[seq(1, length(wagi), 3)] else NULL
+
   wynik <- list(
     porownanie = porownanie_df,
     korelacje = macierz_kor,
-    wagi_ostre = wagi[seq(1, length(wagi), 3)]
+    wagi_ostre = wagi_wyjsciowe
   )
 
   return(wynik)
@@ -237,15 +239,18 @@ cyber <- function(wagi = "bwm", ...) {
     )
   }
 
-  wagi_do_plotow <- rep(wynik$wagi_ostre, each = 3) # jeśli funkcja zwraca wagi_ostre
+  if (wagi != "entropia") {
+    bwm_wagi_ostre <- oblicz_wagi_bwm(names(bwm_najlepsze), as.numeric(bwm_najlepsze), as.numeric(bwm_najgorsze))$wagi_kryteriow
+    wagi_do_plotow <- rep(bwm_wagi_ostre, each = 3)
+  } else {
+    wagi_do_plotow <- rep(wynik$wagi_ostre, each = 3)
+  }
 
-  # 2. Generujemy obiekty do plotowania
-  # Podajemy jawnie typy i wagi, żeby uniknąć błędu '.pobierz_finalne_wagi'
   message("\nGeneruję wizualizacje...")
 
   w_topsis <- rozmyty_topsis(macierz, typy_kryteriow = typy, wagi = wagi_do_plotow)
   w_vikor  <- rozmyty_vikor(macierz, typy_kryteriow = typy, wagi = wagi_do_plotow)
-
+  
   # Wyświetlamy oba wykresy
   print(plot(w_topsis))
   print(plot(w_vikor))

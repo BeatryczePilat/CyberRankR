@@ -178,7 +178,7 @@ rozmyty_topsis <- function(macierz_decyzyjna, typy_kryteriow, wagi = NULL,
   skalar_D_neg <- rowMeans(d_neg_rozmyte)
 
   ramka_wynikow <- data.frame(
-    Alternatywa = 1:nrow(macierz_decyzyjna),
+    Alternatywa = rownames(macierz_decyzyjna),
     D_plus = skalar_D_poz,
     D_minus = skalar_D_neg,
     Wynik = wynik_def,
@@ -279,7 +279,7 @@ rozmyty_vikor <- function(macierz_decyzyjna, typy_kryteriow, v = 0.5, wagi = NUL
   def_Q <- (Q_rozmyte[,1] + 2*Q_rozmyte[,2] + Q_rozmyte[,3]) / 4
 
   ramka_wynikow <- data.frame(
-    Alternatywa = 1:nrow(macierz_decyzyjna),
+    Alternatywa = rownames(macierz_decyzyjna),
     Def_S = def_S,
     Def_R = def_R,
     Def_Q = def_Q,
@@ -365,7 +365,7 @@ rozmyty_waspas <- function(macierz_decyzyjna, typy_kryteriow, lambda = 0.5, wagi
   Q_wartosc <- lambda * def_wsm + (1 - lambda) * def_wpm
 
   ramka_wynikow <- data.frame(
-    Alternatywa = 1:nrow(macierz_decyzyjna),
+    Alternatywa = rownames(macierz_decyzyjna),
     WSM = def_wsm,
     WPM = def_wpm,
     Wynik = Q_wartosc,
