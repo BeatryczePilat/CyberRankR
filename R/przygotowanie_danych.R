@@ -6,17 +6,14 @@
 #' @keywords internal
 .parsuj_skladnie_mcda <- function(skladnia) {
 
-  # Usuwamy znaki nowej linii
   czysta_skladnia <- gsub("\n", "", skladnia)
 
-  # Dzielimy po średniku (oddzielne kryteria)
   linie <- strsplit(czysta_skladnia, ";")[[1]]
   mapowanie <- list()
 
   for (linia in linie) {
     if (trimws(linia) == "") next
 
-    # Dzielimy wg operatora "=~"
     czesci <- strsplit(linia, "=~")[[1]]
 
     if (length(czesci) == 2) {
@@ -36,15 +33,12 @@
 #' @keywords internal
 .skaluj_do_saaty <- function(wektor) {
 
-  # Zabezpieczenie przed wartościami ujemnymi
   if (any(wektor < 0, na.rm = TRUE)) {
     stop("Wykryto wartości ujemne w danych wejściowych.")
   }
 
-  # Obsługa braków danych i kodów błędów (np. 99)
   wektor[is.na(wektor) | wektor == 99] <- 0
 
-  # Skalujemy tylko poprawne wartości (>0)
   maska <- wektor > 0
   wartosci <- wektor[maska]
 
@@ -73,7 +67,6 @@
   m <- wektor
   u <- pmin(9, wektor + 1)
 
-  # Zera (braki danych) pozostają zerami
   zerowe <- wektor == 0
   l[zerowe] <- 0
   m[zerowe] <- 0
@@ -114,11 +107,9 @@ przygotuj_dane_mcda <- function(dane,
     stop("Argument 'dane' musi być ramką danych (data frame).")
   }
 
-  # 1. Parsowanie składni kryteriów
   mapowanie <- .parsuj_skladnie_mcda(skladnia)
   nazwy_kryteriow <- names(mapowanie)
 
-  # 2. Obliczanie wyników kompozytowych i skalowanie
   tmp <- data.frame(row_id = seq_len(nrow(dane)))
 
   for (kryt in nazwy_kryteriow) {
@@ -141,7 +132,6 @@ przygotuj_dane_mcda <- function(dane,
     tmp[[kryt]] <- .skaluj_do_saaty(surowy)
   }
 
-  # 3. Agregacja ekspertów do alternatyw
   if (!is.null(kolumna_alternatyw)) {
 
     if (!kolumna_alternatyw %in% names(dane)) {
@@ -166,7 +156,6 @@ przygotuj_dane_mcda <- function(dane,
     nazwy_wierszy <- seq_len(nrow(macierz))
   }
 
-  # 4. Rozmywanie (crisp → fuzzy)
   lista <- list()
   for (i in seq_along(nazwy_kryteriow)) {
     lista[[nazwy_kryteriow[i]]] <- .rozmyj_wektor(macierz[, i])

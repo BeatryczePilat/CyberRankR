@@ -1,7 +1,3 @@
-# =============================================================================
-# generuj_dane.R
-# =============================================================================
-
 library(readr)
 library(dplyr)
 library(lubridate)
@@ -11,26 +7,15 @@ library(usethis)
 set.seed(123)
 csv_path <- "inst/ext-data/cybersecurity_attacks.csv"
 
-# ------------------------------------------------------------
-# 1. Wczytanie i Wstępne Czyszczenie
-# ------------------------------------------------------------
 cyber_raw <- read_csv(csv_path, col_types = cols(.default = "c"))
 
-# ------------------------------------------------------------
-# 2. Definicja Panelu Eksperckiego i Alternatyw
-# ------------------------------------------------------------
-# mamy 20 ekspertów (reprezentujących regiony), którzy oceniają ataki.
 top_countries <- cyber_raw %>%
   count(`Geo-location Data`, sort = TRUE) %>%
   head(20) %>%
   pull(`Geo-location Data`)
 
-#3 główne typy ataków
 target_attacks <- c("Malware", "DDoS", "Intrusion")
 
-# ------------------------------------------------------------
-# 3. Przetwarzanie Ocen (Ekspert -> Alternatywa)
-# ------------------------------------------------------------
 cyber_expert_panel <- cyber_raw %>%
   filter(
     `Geo-location Data` %in% top_countries,
@@ -55,7 +40,6 @@ cyber_expert_panel <- cyber_raw %>%
   ) %>%
   group_by(ExpertID = `Geo-location Data`, Alternative = `Attack Type`) %>%
   summarise(
-    # ZMIANA: Kwantyl 0.9 zamiast mean(). Szukamy najgroźniejszych incydentów.
     crit_severity   = quantile(severity_score, 0.9, na.rm = TRUE),
     crit_anomaly    = quantile(anomaly_score, 0.9, na.rm = TRUE),
     crit_complexity = quantile(tech_complexity, 0.9, na.rm = TRUE),
@@ -68,13 +52,9 @@ set.seed(42)
 weights_matrix <- matrix(runif(20 * 5), nrow = 20, ncol = 5)
 weights_matrix <- weights_matrix / rowSums(weights_matrix)
 colnames(weights_matrix) <- c("crit_severity", "crit_anomaly", "crit_complexity", "crit_impact", "crit_stealth")
-# ------------------------------------------------------------
-# 4. Diagnostyka i Zapis
-# ------------------------------------------------------------
 
 cat("Liczba wierszy (Ekspert x Alternatywa):", nrow(cyber_expert_panel), "\n")
 print(head(cyber_expert_panel))
-# Sprawdzamy, czy brakuje konkretnego wiersza
 brakujacy_kraj <- "Aurangabad, Nagaland"
 brakujacy_atak <- "Intrusion"
 
@@ -85,7 +65,6 @@ if (czy_brakuje) {
   message("Wykryto brak danych dla: ", brakujacy_kraj, " - ", brakujacy_atak)
   message("Dokonuję imputacji średnią z pozostałych krajów dla tego typu ataku...")
 
-  # 1. Obliczamy średnią ocenę ataku "Intrusion" (z pozostałych 19 ekspertów)
   srednia_intrussion <- cyber_expert_panel %>%
     filter(Alternative == brakujacy_atak) %>%
     summarise(
@@ -96,21 +75,18 @@ if (czy_brakuje) {
       crit_stealth    = mean(crit_stealth, na.rm = TRUE)
     )
 
-  # 2. Tworzymy brakujący wiersz
+
   nowy_wiersz <- data.frame(
     ExpertID = brakujacy_kraj,
     Alternative = brakujacy_atak,
-    srednia_intrussion # Wstawiamy obliczone średnie
+    srednia_intrussion
   )
 
-  # 3. Doklejamy do głównej ramki
   cyber_expert_panel <- bind_rows(cyber_expert_panel, nowy_wiersz) %>%
     arrange(ExpertID, Alternative)
   message("Naprawiono. Nowa liczba wierszy: ", nrow(cyber_expert_panel))
 } else {
   message("Dane są kompletne (60 wierszy).")
 }
-# ------------------------------------------------------------
-# 5. Zapis danych do pakietu
-# ------------------------------------------------------------
+
 usethis::use_data(cyber_expert_panel, overwrite = TRUE)

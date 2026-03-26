@@ -1,16 +1,5 @@
-#' Zagregowane dane o incydentach cyberbezpieczeństwa do analizy MCDA
-#'
-#' Zbiór danych zawierający zagregowane informacje o incydentach
-#' cyberbezpieczeństwa, pogrupowane według typu ataku.
-#' Dane zostały przygotowane do wykorzystania w metodach
-#' wielokryterialnego wspomagania decyzji (MCDA), takich jak
-#' TOPSIS, Fuzzy TOPSIS czy PROMETHEE.
-#'
-#' Każdy wiersz reprezentuje jedną alternatywę decyzyjną zdefiniowaną jako kombinacja kraju, typu ataku oraz scenariusza (3 alternatywy na każdą parę kraj × typ ataku).
-#' Kolumny opisują średnie wartości kryteriów obliczone na podstawie
-#' co najmniej 20 zarejestrowanych incydentów.
-#'
-#' @format Ramka danych (data frame) o 60 wierszach i 7 kolumnach:
+#' Zagregowane dane o incydentach cyberbezpieczeństwa
+#' @format Ramka danych o 60 wierszach i 7 kolumnach:
 #' \describe{
 #'   \item{ExpertID}{Identyfikator eksperta (Geo-location Data)}
 #'   \item{Alternative}{Typ ataku cybernetycznego (DDoS, Malware, Intrusion)}
